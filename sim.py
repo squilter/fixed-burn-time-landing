@@ -44,7 +44,7 @@ print(f"Time {TIME_BUCKETS}; Vel {VEL_BUCKETS}; Pos {HEIGHT_BUCKETS}; Table size
 
 costs = {} # maps from (time, vel, height) -> cost-to-go
 times = np.linspace(0, TOTAL_BURN_TIME, TIME_BUCKETS)
-vels = np.linspace(0, 20, VEL_BUCKETS)
+vels = np.linspace(0, 19, VEL_BUCKETS)
 heights = np.linspace(0, 40, HEIGHT_BUCKETS)
 actions = np.linspace(20,100,9)
 for t in times:
@@ -58,7 +58,9 @@ def nearest(a, a0):
     return a[np.abs(a - a0).argmin()]
 
 def nearest_state(t, vel, height):
-    return (nearest(times, t), nearest(vels, vel), nearest(heights, height))
+    new_state = (nearest(times, t), nearest(vels, vel), nearest(heights, height))
+    assert new_state in costs
+    return new_state
 
 def dynamics(state, action):
     assert(state in costs)
@@ -69,7 +71,6 @@ def dynamics(state, action):
     # print(f"with throttle {action} at time {t}, vel {vel} goes to {new_vel} which rounds to {nearest(vels, new_vel)}")
     new_height = height - new_vel*DT
     new_state = nearest_state(t - DT, new_vel, new_height)
-    assert new_state in costs
     # assert new_state != state, "Self transition detected!"
     return new_state
 
@@ -86,7 +87,7 @@ def is_landed(state):
 
 def is_crashed(state):
     t, vel, height = state
-    return height < 100 and vel > 2
+    return height <= 1 and vel > 3
 
 def cost(state, action):
     assert state in costs
@@ -94,7 +95,7 @@ def cost(state, action):
     if is_landed(state):
         return 0
     if is_crashed(state):
-        return 999999
+        return float("inf")
     
     # Let's have a slight preference for keeping throttle around 80%
     cost = 1
@@ -103,20 +104,31 @@ def cost(state, action):
     
     return costs[dynamics(state, action)] + cost
 
-def batch_update():
-    zero_cost_fields = 0
+def value_iteration_batch_update():
     for state in costs.keys():
+        new_costs = []
         for action in actions:
-            new_cost = cost(state, action)
-            if new_cost  < 0.001:
-                zero_cost_fields += 1
-            costs[state] = new_cost
-    return len(costs.keys()) - zero_cost_fields
+            new_costs.append(cost(state, action))
+        new_cost = min(new_costs)
+        costs[state] = new_cost
 
-i = 0
-start_time = time.time()
-while True:
-    print(f"Batch {i} at time {time.time() - start_time}")
-    i+=1
-    print(cost(nearest_state(3.333, 12, 13), 80))
-    print(batch_update())
+def extract_policy():
+    return 0 # TODO
+
+def count_non_crashing_states():
+    good = 0
+    for c in costs.values():
+        if c != float("inf"):
+            good += 1
+    return good
+
+def calc_policy(batches = 10):
+    start_time = time.time()
+    for i in range(10):
+        value_iteration_batch_update()
+        print(f"Batch {i} at time {time.time() - start_time:.2f}. ", end="")
+        print(f"Landing from {100*count_non_crashing_states()/(TIME_BUCKETS*VEL_BUCKETS*HEIGHT_BUCKETS):.2f}% of starting configurations")
+    return extract_policy()
+
+calc_policy()
+print(cost(nearest_state(3, 12, 13), 80))
