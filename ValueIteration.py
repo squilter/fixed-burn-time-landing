@@ -1,8 +1,9 @@
 import time
 
+
 class ValueIterator:
     def __init__(self, states, actions, transition_func, loss_func):
-        self._costs = {} # maps from (time, vel, height) -> cost-to-go
+        self._costs = {}  # maps from (time, vel, height) -> cost-to-go
         for s in states:
             self._costs[s] = 0
         self._actions = actions
@@ -10,7 +11,9 @@ class ValueIterator:
         self._loss_func = loss_func
 
     def _cost_func(self, state, action):
-        return self._costs[self._transition_func(state, action)] + self._loss_func(state, action)
+        return self._costs[self._transition_func(state, action)] + self._loss_func(
+            state, action
+        )
 
     def _value_iteration_batch_update(self):
         for state in self._costs.keys():
@@ -40,10 +43,12 @@ class ValueIterator:
                 good += 1
         return good
 
-    def calc_policy(self, batches = 5):
+    def calc_policy(self, batches=5):
         start_time = time.time()
         for i in range(batches):
             self._value_iteration_batch_update()
             print(f"Batch {i} complete after {time.time() - start_time:.2f}s. ", end="")
-            print(f"Landing from {100*self._count_non_crashing_states()/(len(self._costs.keys())):.2f}% of starting configurations")
+            print(
+                f"Landing from {100*self._count_non_crashing_states()/(len(self._costs.keys())):.2f}% of starting configurations"
+            )
         return self._extract_policy()
