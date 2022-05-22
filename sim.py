@@ -77,17 +77,17 @@ def dynamics(state, action):
 def is_landed(state):
     assert state in costs
     t, vel, height = state
-    if t > 0.0001:
+    if t > 0.00001:
         return False
     if vel > 1.00001:
          return False
-    if height > 1.00001:
+    if height > 0.00001:
         return False
     return True
 
 def is_crashed(state):
     t, vel, height = state
-    return height <= 1 and vel > 3
+    return height <= 0.00001 and vel >= 2
 
 def cost(state, action):
     assert state in costs
@@ -113,7 +113,17 @@ def value_iteration_batch_update():
         costs[state] = new_cost
 
 def extract_policy():
-    return 0 # TODO
+    policy = {}
+    for state in costs.keys():
+        min_cost = float("inf")
+        best_action = None
+        for action in actions:
+            c = cost(state, action)
+            if c < min_cost:
+                min_cost = c
+                best_action = action
+        policy[state] = best_action
+    return policy
 
 def count_non_crashing_states():
     good = 0
@@ -124,11 +134,20 @@ def count_non_crashing_states():
 
 def calc_policy(batches = 10):
     start_time = time.time()
-    for i in range(10):
+    for i in range(batches):
         value_iteration_batch_update()
-        print(f"Batch {i} at time {time.time() - start_time:.2f}. ", end="")
+        print(f"Batch {i} complete after {time.time() - start_time:.2f}s. ", end="")
         print(f"Landing from {100*count_non_crashing_states()/(TIME_BUCKETS*VEL_BUCKETS*HEIGHT_BUCKETS):.2f}% of starting configurations")
     return extract_policy()
 
-calc_policy()
-print(cost(nearest_state(3, 12, 13), 80))
+def demo(policy):
+    state = nearest_state(3, 12, 13)
+    print(f"Starting at {state}")
+    while not (is_landed(state) or is_crashed(state)):
+        action = policy[state]
+        state = dynamics(state, action)
+        print(f"Applying {action}% for {DT:.2f}s. Resulting state is {state}")
+
+policy = calc_policy()
+
+demo(policy)
