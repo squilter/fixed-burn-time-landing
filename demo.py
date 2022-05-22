@@ -4,52 +4,16 @@ import time
 
 import numpy as np
 import matplotlib.pyplot as plt
-from Dynamics import thrust, mass, TOTAL_BURN_TIME
-
-DT = 1/3
-TIME_BUCKETS = int(TOTAL_BURN_TIME * 1/DT)
-VEL_BUCKETS = int(20)
-HEIGHT_BUCKETS = int(40 * 1/DT)
+from Dynamics import *
 
 print(f"Time {TIME_BUCKETS}; Vel {VEL_BUCKETS}; Pos {HEIGHT_BUCKETS}; Table size {TIME_BUCKETS*VEL_BUCKETS*HEIGHT_BUCKETS} bytes")
 
-# plot thrust curve
-# plt.gca().invert_xaxis()
-# times = np.linspace(TOTAL_BURN_TIME, 0, TIME_BUCKETS)
-# plt.plot(times, [thrust(t) for t in times])
-# plt.show()
-
 costs = {} # maps from (time, vel, height) -> cost-to-go
-times = np.linspace(0, TOTAL_BURN_TIME, TIME_BUCKETS)
-vels = np.linspace(0, 19, VEL_BUCKETS)
-heights = np.linspace(0, 40, HEIGHT_BUCKETS)
-actions = np.linspace(20,100,9)
 for t in times:
     for vel in vels:
         for height in heights:
             state = (t, vel, height)
             costs[state] = 0
-
-def nearest(a, a0):
-    # find nearest value in a to a0
-    return a[np.abs(a - a0).argmin()]
-
-def nearest_state(t, vel, height):
-    new_state = (nearest(times, t), nearest(vels, vel), nearest(heights, height))
-    assert new_state in costs
-    return new_state
-
-def dynamics(state, action):
-    assert(state in costs)
-    assert(action in actions)
-    t, vel, height = state
-    # Assume actuation is instantaneous
-    new_vel = vel + (-(action/100 * thrust(t))/mass(t) + 9.8)*DT
-    # print(f"with throttle {action} at time {t}, vel {vel} goes to {new_vel} which rounds to {nearest(vels, new_vel)}")
-    new_height = height - new_vel*DT
-    new_state = nearest_state(t - DT, new_vel, new_height)
-    # assert new_state != state, "Self transition detected!"
-    return new_state
 
 def is_landed(state):
     assert state in costs
@@ -79,7 +43,7 @@ def cost(state, action):
     if action > 91 or action < 69:
         cost = 1.1
     
-    return costs[dynamics(state, action)] + cost
+    return costs[dynamics(state, action, DT)] + cost
 
 def value_iteration_batch_update():
     for state in costs.keys():
@@ -122,7 +86,7 @@ def demo(policy):
     print(f"Starting at {state}")
     while not (is_landed(state) or is_crashed(state)):
         action = policy[state]
-        state = dynamics(state, action)
+        state = dynamics(state, action, DT)
         print(f"Applying {action}% for {DT:.2f}s. Resulting state is {state}")
 
 policy = calc_policy()
