@@ -7,37 +7,25 @@ import matplotlib.pyplot as plt
 from Dynamics import *
 from ValueIteration import ValueIterator
 
-print(
-    f"Time {TIME_BUCKETS}; Vel {VEL_BUCKETS}; Pos {HEIGHT_BUCKETS}; Table size {TIME_BUCKETS*VEL_BUCKETS*HEIGHT_BUCKETS} bytes"
-)
+EPS = 0.00001
 
-costs = {}  # maps from (time, vel, height) -> cost-to-go
+valid_states = set()  # (time, vel, height)
 for t in times:
     for vel in vels:
         for height in heights:
             state = (t, vel, height)
-            costs[state] = 0
-
-
-def is_landed(state):
-    assert state in costs
-    t, vel, height = state
-    if t > 0.00001:
-        return False
-    if vel > 1.00001:
-        return False
-    if height > 0.00001:
-        return False
-    return True
-
+            valid_states.add(state)
 
 def is_crashed(state):
     t, vel, height = state
     return height <= 0.00001 and vel >= 2
 
+def is_landed(state):
+    t, vel, height = state
+    return t < EPS and vel < 1+EPS and height < EPS
 
 def loss(state, action):
-    assert state in costs
+    assert state in valid_states
     assert action in actions
     if is_landed(state):
         return 0
@@ -52,16 +40,20 @@ def loss(state, action):
     return cost
 
 
-def demo(policy):
-    state = nearest_state(3, 12, 13)
-    print(f"Starting at {state}")
+def demo(policy, state):
+    print("### DEMO ###")
     while not (is_landed(state) or is_crashed(state)):
         action = policy[state]
         state = dynamics(state, action)
-        print(f"Applying {action}% for {DT:.2f}s. Resulting state is {state}")
+        print(f"Currently at height {state[2]} with speed {state[1]} with {state[0]} seconds burn remaining. Applying {action}% for {DT:.2f}s.")
+    print(f"Ended with height {state[2]}, speed {state[1]} and {state[0]} seconds burn remaining.")
 
+if __name__ == "__main__":
+    print(f"Generating table with size {TIME_BUCKETS*VEL_BUCKETS*HEIGHT_BUCKETS}:")
+    print(f"Time {TIME_BUCKETS}; Vel {VEL_BUCKETS}; Pos {HEIGHT_BUCKETS}")
 
-valueIterator = ValueIterator(costs.keys(), actions, dynamics, loss)
-policy = valueIterator.calc_policy()
+    valueIterator = ValueIterator(valid_states, actions, dynamics, loss)
+    policy = valueIterator.calc_policy(batches = 10)
 
-demo(policy)
+    starting_state = state = nearest_state(3, 12, 13)
+    demo(policy, starting_state)
