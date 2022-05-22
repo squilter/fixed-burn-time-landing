@@ -43,12 +43,12 @@ def nearest_state(t, vel, height):
     new_state = (nearest(times, t), nearest(vels, vel), nearest(heights, height))
     return new_state
 
-def dynamics(state, action, dt):
+def dynamics(state, action):
     t, vel, height = state
     # Assume actuation is instantaneous
-    new_vel = vel + (-(action/100 * thrust(t))/mass(t) + 9.8)*dt
-    new_height = height - new_vel*dt
-    new_t = t - dt
+    new_vel = vel + (-(action/100 * thrust(t))/mass(t) + 9.8)*DT
+    new_height = height - new_vel*DT
+    new_t = t - DT
     return nearest_state(new_t, new_vel, new_height)
 
 # Plot thrust curve
