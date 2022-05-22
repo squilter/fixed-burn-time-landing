@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 # The dataset says 3.45 but it's convenient if this is a multiple of DT
 TOTAL_BURN_TIME=3.334
@@ -23,3 +24,13 @@ def mass(burn_time_remaining):
     # From a screengrab, seemed like mass was 1.1kg before burn started and 1.04kg after it finished
     slope = (1.10-1.04) / TOTAL_BURN_TIME
     return np.clip(burn_time_remaining * slope + 1.04, 1.04, 1.10)
+
+# Plot thrust curve
+if(__name__ == '__main__'):
+    plt.gca().invert_xaxis()
+    # Since we are discretizing with only a few time buckets, it's important that the result is not distorted by discretization.
+    # Try plotting with TIME_BUCKETS=10 and with 1000 and make sure it looks similar
+    TIME_BUCKETS = 10
+    times = np.linspace(TOTAL_BURN_TIME, 0, TIME_BUCKETS)
+    plt.plot(times, [thrust(t) for t in times])
+    plt.show()
