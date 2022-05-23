@@ -23,24 +23,15 @@ class ValueIterator:
         # we can run value iteration on t increasing and it converges in a single batch
         states_to_visit.sort(key=lambda x: x[0])
 
-        for state in tqdm(states_to_visit, desc="Batch Update"):
-            new_costs = []
-            for action in self._actions:
-                new_costs.append(self._cost_func(state, action))
-            new_cost = min(new_costs)
-            self._costs[state] = new_cost
-
-    def _extract_policy(self):
         policy = {}
-        for state in tqdm(self._costs.keys(), desc="Extracting Policy"):
-            min_cost = float("inf")
-            best_action = None
+        for state in tqdm(states_to_visit, desc="Batch Update"):
+            costs_and_actions = []
             for action in self._actions:
-                c = self._cost_func(state, action)
-                if c < min_cost:
-                    min_cost = c
-                    best_action = action
-            policy[state] = best_action
+                costs_and_actions.append((self._cost_func(state, action), action))
+            costs_and_actions.sort(key=lambda x: x[0])
+            new_cost = costs_and_actions[0][0]
+            policy[state] = costs_and_actions[0][1]
+            self._costs[state] = new_cost
         return policy
 
     def _count_non_crashing_states(self):
@@ -52,8 +43,9 @@ class ValueIterator:
 
     def calc_policy(self, batches=1):
         start_time = time.time()
+        policy = None
         for i in range(batches):
-            self._value_iteration_batch_update()
+            policy = self._value_iteration_batch_update()
             print(f"Batch {i+1}/{batches} complete after {time.time() - start_time:.2f}s. ", end="")
             print(f"Landing from {100*self._count_non_crashing_states()/(len(self._costs.keys())):.2f}% of starting configurations.")
-        return self._extract_policy()
+        return policy

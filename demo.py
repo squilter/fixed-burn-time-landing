@@ -25,7 +25,7 @@ def is_crashed(state):
 
 def is_landed(state):
     t, vel, height = state
-    return t < EPS and vel < 1 + EPS and height < 1 + EPS
+    return t < EPS and vel < 0.6 + EPS and height < 0.6 + EPS
 
 
 # Returns a small number when something good happens and a big number when something bad happens
@@ -50,9 +50,9 @@ def demo(policy, state):
         if action is None:
             print("Infeasible!")
             return
-        print(f"Now at height {state[2]} with speed {state[1]} with {state[0]} seconds burn remaining. Applying {action}% for {DT:.2f}s.")
+        print(f"Now at height {state[2]:.2f} with speed {state[1]:.2f} with {state[0]:.2f} seconds burn remaining. Applying {action}% for {DT:.2f}s.")
         state = dynamics(state, action)
-    print(f"Now at height {state[2]} with speed {state[1]} with {state[0]} seconds burn remaining. End")
+    print(f"Now at height {state[2]:.2f} with speed {state[1]:.2f} with {state[0]:.2f} seconds burn remaining. {'Landed!' if is_landed(state) else 'Crashed!'}")
 
 
 if __name__ == "__main__":
