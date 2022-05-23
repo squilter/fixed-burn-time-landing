@@ -5,4 +5,6 @@ Generates a big lookup table for landing. Use the following for lookup:
 - speed
 - height
 
-Run `python3 demo.py` and it will generate a table and then show what the control policy would do in case of a low&slow start vs a fast&high start
+Run `pip3 install -r requirements.txt` first
+
+Run `python3 demo.py` and it will generate a table and then show what the control policy would do with multiple starting conditions

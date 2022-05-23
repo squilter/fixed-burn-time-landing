@@ -63,7 +63,7 @@ if __name__ == "__main__":
         print(f"Speed Options:\n{vels}")
         print(f"Height Options:\n{heights}")
         valueIterator = ValueIterator(valid_states, actions, dynamics, loss)
-        policy = valueIterator.calc_policy(batches=int(TIME_BUCKETS+1))
+        policy = valueIterator.calc_policy()
         with open("policy.p", "wb") as f:
             pickle.dump(policy, f)
     else:
