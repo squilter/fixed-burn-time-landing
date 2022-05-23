@@ -6,13 +6,20 @@ TOTAL_BURN_TIME = 3.334
 
 DT = 1 / 3
 TIME_BUCKETS = int(TOTAL_BURN_TIME * 1 / DT)
-VEL_BUCKETS = int(20)
+VEL_BUCKETS = int(60)
 HEIGHT_BUCKETS = int(40 * 1 / DT)
 
 times = np.linspace(0, TOTAL_BURN_TIME, TIME_BUCKETS)
 vels = np.linspace(0, 19, VEL_BUCKETS)
 heights = np.linspace(0, 40, HEIGHT_BUCKETS)
-actions = np.linspace(20, 100, 9)
+actions = np.linspace(60, 100, 17)
+
+valid_states = set()  # (time, vel, height)
+for t in times:
+    for vel in vels:
+        for height in heights:
+            state = (t, vel, height)
+            valid_states.add(state)
 
 
 def thrust(burn_time_remaining):
@@ -77,7 +84,7 @@ def thrust(burn_time_remaining):
         0,
     ]
 
-    # Shifting the dataset 50ms makes it fit much better at dt=1/3
+    # Shifting the dataset 50ms makes it fit much better with dt=1/3
     time_lookup = TOTAL_BURN_TIME - burn_time_remaining + 0.05
     if time_lookup < 0 or time_lookup > 3.45:
         return 0

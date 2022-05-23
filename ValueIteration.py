@@ -47,8 +47,6 @@ class ValueIterator:
         start_time = time.time()
         for i in range(batches):
             self._value_iteration_batch_update()
-            print(f"Batch {i} complete after {time.time() - start_time:.2f}s. ", end="")
-            print(
-                f"Landing from {100*self._count_non_crashing_states()/(len(self._costs.keys())):.2f}% of starting configurations"
-            )
+            print(f"Batch {i}/{batches} complete after {time.time() - start_time:.2f}s. ", end="")
+            print(f"Landing from {100*self._count_non_crashing_states()/(len(self._costs.keys())):.2f}% of starting configurations.")
         return self._extract_policy()

@@ -1,29 +1,34 @@
 #!/usr/bin/env python3
 
 import time
-
+import pickle
+import os.path
 import numpy as np
 import matplotlib.pyplot as plt
+
 from Dynamics import *
 from ValueIteration import ValueIterator
 
-EPS = 0.00001
+EPS = 0.01
 
-valid_states = set()  # (time, vel, height)
-for t in times:
-    for vel in vels:
-        for height in heights:
-            state = (t, vel, height)
-            valid_states.add(state)
 
 def is_crashed(state):
     t, vel, height = state
-    return height <= 0.00001 and vel >= 2
+    # hitting the ground hard at any point is a crash
+    if height <= EPS and vel > 2 + EPS:
+        return True
+    # Not being landed when the motor burns out is a crash
+    if t < EPS and not is_landed(state):
+        return True
+    return False
+
 
 def is_landed(state):
     t, vel, height = state
-    return t < EPS and vel < 1+EPS and height < EPS
+    return t < EPS and vel < 1 + EPS and height < 1 + EPS
 
+
+# Returns a small number when something good happens and a big number when something bad happens
 def loss(state, action):
     assert state in valid_states
     assert action in actions
@@ -33,27 +38,46 @@ def loss(state, action):
         return float("inf")
 
     # Let's have a slight preference for keeping throttle around 80%
-    cost = 1
-    if action > 91 or action < 69:
-        cost = 1.1
+    loss = 1
+    loss += 0.01 * abs(action - 80)
 
-    return cost
+    return loss
 
 
 def demo(policy, state):
-    print("### DEMO ###")
     while not (is_landed(state) or is_crashed(state)):
         action = policy[state]
+        if action is None:
+            print("Infeasible!")
+            return
+        print(f"Now at height {state[2]} with speed {state[1]} with {state[0]} seconds burn remaining. Applying {action}% for {DT:.2f}s.")
         state = dynamics(state, action)
-        print(f"Currently at height {state[2]} with speed {state[1]} with {state[0]} seconds burn remaining. Applying {action}% for {DT:.2f}s.")
-    print(f"Ended with height {state[2]}, speed {state[1]} and {state[0]} seconds burn remaining.")
+    print(f"Now at height {state[2]} with speed {state[1]} with {state[0]} seconds burn remaining. End")
+
 
 if __name__ == "__main__":
-    print(f"Generating table with size {TIME_BUCKETS*VEL_BUCKETS*HEIGHT_BUCKETS}:")
-    print(f"Time {TIME_BUCKETS}; Vel {VEL_BUCKETS}; Pos {HEIGHT_BUCKETS}")
+    policy = None
+    if not os.path.exists("policy.p") or "y" == input("Recompute policy? [y/n]: ".lower()):
+        print(f"Generating table with size {TIME_BUCKETS*VEL_BUCKETS*HEIGHT_BUCKETS}:")
+        print(f"Time Options:\n{times};")
+        print(f"Speed Options:\n{vels}")
+        print(f"Height Options:\n{heights}")
+        valueIterator = ValueIterator(valid_states, actions, dynamics, loss)
+        policy = valueIterator.calc_policy(batches=int(TIME_BUCKETS+1))
+        with open("policy.p", "wb") as f:
+            pickle.dump(policy, f)
+    else:
+        with open("policy.p", "rb") as f:
+            policy = pickle.load(f)
 
-    valueIterator = ValueIterator(valid_states, actions, dynamics, loss)
-    policy = valueIterator.calc_policy(batches = 10)
-
+    print("### DEMO: Start burn at 13m with 12m/s speed ###")
     starting_state = state = nearest_state(3, 12, 13)
+    demo(policy, starting_state)
+
+    print("### DEMO: Start burn at 11m with 9/s speed ###")
+    starting_state = state = nearest_state(3, 9, 11)
+    demo(policy, starting_state)
+
+    print("### DEMO: Start burn at 2m with 15m/s speed ###")
+    starting_state = state = nearest_state(3.0, 15, 2)
     demo(policy, starting_state)
