@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 
 from Dynamics import *
 from ValueIteration import ValueIterator
+from Visualizer import plot_policy
 
 EPS = 0.01
 
@@ -81,3 +82,17 @@ if __name__ == "__main__":
     print("### DEMO: Start burn at 2m with 15m/s speed ###")
     starting_state = state = nearest_state(3.0, 15, 2)
     demo(policy, starting_state)
+
+    plot_policy(policy)
+
+    # consider plotting the policy. at least a timeslice of it.
+
+    # I could try to turn the policy table into a polynomial
+    # arrange states (with valid control laws) into a matrix A with 3 columns
+    # Arrange the corresponding controls into a vector with the same length as A
+    # Now we could easily solve for a linear policy by solving Ax=b with least squares
+    # This would result in a linear control policy
+
+    # To get higher order fit, I can put them into a matrix A where rows are 1,x,y,z,x^2,y^2,z^2,x^3,y^3,... (the 1 at the beginning allows a +c term)
+    # least regressions on this gives me more coefficients show the linear example from above. Note that, using this function, we don’t need to turn y into a column vector.
+    # If I think an exponential function or somehting might fit better, I could use scipy.optimize.curve_fit to fit to arbitrary functions (returns coefficients)
