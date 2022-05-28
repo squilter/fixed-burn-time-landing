@@ -3,7 +3,7 @@ import numpy as np
 import scipy.ndimage
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
-from Dynamics import nearest
+from Dynamics import nearest, HEIGHT_MAX, VEL_MAX
 
 def plot_policy(policy):
     times = set()
@@ -20,31 +20,30 @@ def plot_policy(policy):
     heights = list(heights)
     heights.sort()
 
-    data = np.ndarray([len(times), len(vels), len(heights)])
+    data = np.ndarray([len(times), len(heights), len(vels)])
 
     for i, t in enumerate(times):
         for j, v in enumerate(vels):
             for k, h in enumerate(heights):
-                data[i, j, k] = policy[(t, v, h)]
+                data[i, k, j] = policy[(t, v, h)]
 
     fig = plt.figure(1, figsize=(6,6))
     main_ax = fig.add_axes([0.1,0.2,0.8,0.7])
     slider_ax  = fig.add_axes([0.1,0.1,0.8,0.05])
-
-    main_ax.imshow(data[0,:,:], aspect='auto')
 
     my_slider = Slider(slider_ax, 'Burn time remaining (s)', valmin = 0, valmax = max(times), valinit = 0)
 
     def update(val):
         time_index = times.index(nearest(times, val))
         
-        main_ax.imshow(scipy.ndimage.gaussian_filter(data[time_index,:,:], 1), aspect='auto')
-        main_ax.set_xlabel("Height (m)")
-        main_ax.set_ylabel("Speed towards ground (m/s)")
+        im = main_ax.imshow(scipy.ndimage.gaussian_filter(data[time_index,:,:], 1), origin='lower', aspect='auto')
+        print(im.get_extent())
+        im.set_extent([0, VEL_MAX, 0, HEIGHT_MAX])
+        main_ax.set_xlabel("Speed towards ground (m/s)")
+        main_ax.set_ylabel("Height (m)")
 
-        # TODO fix x/y ticks
         plt.draw()
-
+    
     my_slider.on_changed(update)
     plt.show()
 
