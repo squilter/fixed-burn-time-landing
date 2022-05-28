@@ -6,13 +6,14 @@ TOTAL_BURN_TIME = 3.3333334
 
 DT = 1 / 3
 TIME_BUCKETS = int(TOTAL_BURN_TIME * 1 / DT)
-VEL_BUCKETS = 101
-HEIGHT_BUCKETS = 401
+VEL_BUCKETS = 50
+HEIGHT_BUCKETS = 200
+ACTION_BUCKETS = 20
 
 times = np.linspace(0, TOTAL_BURN_TIME, TIME_BUCKETS)
-vels = np.linspace(0, 20, VEL_BUCKETS)
-heights = np.linspace(0, 40, HEIGHT_BUCKETS)
-actions = np.linspace(50, 100, 21)
+vels = np.linspace(0, 18, VEL_BUCKETS)
+heights = np.linspace(0, 25, HEIGHT_BUCKETS)
+actions = np.linspace(50, 100, ACTION_BUCKETS)
 
 valid_states = set()  # (time, vel, height)
 for t in times:

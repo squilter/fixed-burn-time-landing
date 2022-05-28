@@ -1,4 +1,6 @@
+import pickle
 import numpy as np
+import scipy.ndimage
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
 from Dynamics import nearest
@@ -31,13 +33,23 @@ def plot_policy(policy):
 
     main_ax.imshow(data[0,:,:], aspect='auto')
 
-    my_slider = Slider(slider_ax, 'Burn time remaining (s)', valmin = 0, valmax = len(times), valinit = 0)
+    my_slider = Slider(slider_ax, 'Burn time remaining (s)', valmin = 0, valmax = max(times), valinit = 0)
 
     def update(val):
-        main_ax.imshow(data[int(val),:,:], aspect='auto')
-        main_ax.set_xlabel("Speed towards ground (m/s)")
-        main_ax.set_ylabel("Height (m)")
+        time_index = times.index(nearest(times, val))
+        
+        main_ax.imshow(scipy.ndimage.gaussian_filter(data[time_index,:,:], 1), aspect='auto')
+        main_ax.set_xlabel("Height (m)")
+        main_ax.set_ylabel("Speed towards ground (m/s)")
+
+        # TODO fix x/y ticks
         plt.draw()
 
     my_slider.on_changed(update)
     plt.show()
+
+# Plot thrust curve
+if __name__ == "__main__":
+    with open("policy.p", "rb") as f:
+        policy = pickle.load(f)
+    plot_policy(policy)
