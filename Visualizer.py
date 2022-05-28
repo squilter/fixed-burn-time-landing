@@ -3,7 +3,7 @@ import numpy as np
 import scipy.ndimage
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
-from Dynamics import nearest, HEIGHT_MAX, VEL_MAX
+from Dynamics import nearest, nearest_state, dynamics_dt, HEIGHT_MAX, VEL_MAX
 
 def plot_policy(policy, threshold=None):
     times = set()
@@ -51,6 +51,28 @@ def plot_policy(policy, threshold=None):
     
     my_slider.on_changed(update)
     plt.show()
+
+def sim(policy, state):
+    SIM_DT = 1/100
+    times = []
+    vels = []
+    actions = []
+    heights = []
+
+    t, v, h = state
+    while t >= 0:
+        times.append(t)
+        vels.append(v)
+        heights.append(h)
+        action = policy[nearest_state(*state)]
+        actions.append(action/5)
+        state = dynamics_dt(state, action, SIM_DT)
+        t, v, h = state
+    
+    plt.plot(times, heights, times, vels, times, actions)
+    plt.gca().invert_xaxis()
+    plt.show()
+
 
 # Plot thrust curve
 if __name__ == "__main__":

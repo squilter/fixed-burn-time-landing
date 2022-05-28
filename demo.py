@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 from Dynamics import *
 from ValueIteration import ValueIterator
-from Visualizer import plot_policy
+from Visualizer import plot_policy, sim
 
 EPS = 0.01
 
@@ -27,27 +27,13 @@ def loss(state, action):
     # On the last step before 0, penalize crashing
     if nearest(times, t) == times[1]:
         (last_t, last_vel, last_height) = dynamics(state,action)
-        loss += 100*last_height**2
-        loss += 100*last_vel**2
+        loss += 100*last_height
+        loss += 100*last_vel
     
     # penalize relying on 100% throttle
     loss += 0.01*(action-80)**2
 
     return loss
-
-
-def demo(policy, state):
-    t, vel, height = state
-    while t > EPS and height > EPS:
-        action = policy[state]
-        if action is None:
-            print("Infeasible!")
-            return
-        print(f"Now at height {state[2]:.2f} with speed {state[1]:.2f} with {state[0]:.2f} seconds burn remaining. Applying {action}% for {DT:.2f}s.")
-        state = dynamics(state, action)
-        t, vel, height = state
-    print(f"Now at height {state[2]:.2f} with speed {state[1]:.2f} with {state[0]:.2f} seconds burn remaining.")
-
 
 if __name__ == "__main__":
     policy = None
@@ -65,21 +51,20 @@ if __name__ == "__main__":
         with open("policy.p", "rb") as f:
             policy, costs = pickle.load(f)
 
+    plot_policy(policy)
+    plot_policy(costs, threshold=250)
+
     print("### DEMO: Start burn at 13m with 12m/s speed ###")
     starting_state = state = nearest_state(3, 12, 13)
-    demo(policy, starting_state)
+    sim(policy, starting_state)
 
     print("### DEMO: Start burn at 11m with 9/s speed ###")
     starting_state = state = nearest_state(3, 9, 11)
-    demo(policy, starting_state)
+    sim(policy, starting_state)
 
     print("### DEMO: Start burn at 2m with 15m/s speed ###")
     starting_state = state = nearest_state(3.0, 15, 2)
-    demo(policy, starting_state)
-
-    plot_policy(policy)
-
-    plot_policy(costs, threshold=250)
+    sim(policy, starting_state)
 
     # consider plotting the policy. at least a timeslice of it.
 
