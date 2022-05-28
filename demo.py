@@ -18,11 +18,17 @@ def loss(state, action):
     assert state in valid_states
     assert action in actions
 
-    loss = 1
+    # No penalty at time 0
     if t < EPS:
-        # When engine burn ends, penalize non-zero height and speed
-        loss += height**2
-        loss += vel**2
+        return 0
+    
+    loss = 1
+
+    # On the last step before 0, penalize crashing
+    if nearest(times, t) == times[1]:
+        (last_t, last_vel, last_height) = dynamics(state,action)
+        loss += 100*last_height**2
+        loss += 100*last_vel**2
     
     # penalize relying on 100% throttle
     loss += 0.01*(action-80)**2
@@ -73,7 +79,7 @@ if __name__ == "__main__":
 
     plot_policy(policy)
 
-    plot_policy(costs)
+    plot_policy(costs, threshold=250)
 
     # consider plotting the policy. at least a timeslice of it.
 

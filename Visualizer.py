@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
 from Dynamics import nearest, HEIGHT_MAX, VEL_MAX
 
-def plot_policy(policy):
+def plot_policy(policy, threshold=None):
     times = set()
     vels = set()
     heights = set()
@@ -27,19 +27,26 @@ def plot_policy(policy):
             for k, h in enumerate(heights):
                 data[i, k, j] = policy[(t, v, h)]
 
+    if threshold:
+        data = (data < threshold)*100
+
     fig = plt.figure(1, figsize=(6,6))
     main_ax = fig.add_axes([0.1,0.2,0.8,0.7])
     slider_ax  = fig.add_axes([0.1,0.1,0.8,0.05])
-    im = main_ax.imshow(scipy.ndimage.gaussian_filter(data[0,:,:], 1), origin='lower', aspect='auto')
+    im = main_ax.imshow(scipy.ndimage.gaussian_filter(data[0,:,:], 1), origin='lower', aspect='auto', vmin=0, vmax=100)
     im.set_extent([0, VEL_MAX, 0, HEIGHT_MAX])
     main_ax.set_xlabel("Speed towards ground (m/s)")
     main_ax.set_ylabel("Height (m)")
     my_slider = Slider(slider_ax, 'Burn time remaining (s)', valmin = 0, valmax = max(times), valinit = 0)
-    fig.colorbar(im, ax=main_ax)
+    colorbar = fig.colorbar(im, ax=main_ax)
 
     def update(val):
         time_index = times.index(nearest(times, val))
-        im.set_data(scipy.ndimage.gaussian_filter(data[time_index,:,:], 1))
+        new_im = data[time_index,:,:]
+        new_im = scipy.ndimage.gaussian_filter(new_im, 1)
+        im.set_data(new_im)
+        colorbar.update_normal(im)
+        colorbar.draw_all()
         plt.draw()
     
     my_slider.on_changed(update)
