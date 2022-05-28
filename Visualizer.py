@@ -30,18 +30,16 @@ def plot_policy(policy):
     fig = plt.figure(1, figsize=(6,6))
     main_ax = fig.add_axes([0.1,0.2,0.8,0.7])
     slider_ax  = fig.add_axes([0.1,0.1,0.8,0.05])
-
+    im = main_ax.imshow(scipy.ndimage.gaussian_filter(data[0,:,:], 1), origin='lower', aspect='auto')
+    im.set_extent([0, VEL_MAX, 0, HEIGHT_MAX])
+    main_ax.set_xlabel("Speed towards ground (m/s)")
+    main_ax.set_ylabel("Height (m)")
     my_slider = Slider(slider_ax, 'Burn time remaining (s)', valmin = 0, valmax = max(times), valinit = 0)
+    fig.colorbar(im, ax=main_ax)
 
     def update(val):
         time_index = times.index(nearest(times, val))
-        
-        im = main_ax.imshow(scipy.ndimage.gaussian_filter(data[time_index,:,:], 1), origin='lower', aspect='auto')
-        print(im.get_extent())
-        im.set_extent([0, VEL_MAX, 0, HEIGHT_MAX])
-        main_ax.set_xlabel("Speed towards ground (m/s)")
-        main_ax.set_ylabel("Height (m)")
-
+        im.set_data(scipy.ndimage.gaussian_filter(data[time_index,:,:], 1))
         plt.draw()
     
     my_slider.on_changed(update)
