@@ -18,17 +18,15 @@ def loss(state, action):
     assert state in valid_states
     assert action in actions
 
-    # No penalty at time 0
-    if t < EPS:
-        return 0
-    
-    loss = 1
+    # Penalize crashing
+    if t < 0:
+        return 100*abs(vel) + 1000*abs(height)
 
-    # On the last step before 0, penalize crashing
-    if nearest(times, t) == times[1]:
-        (last_t, last_vel, last_height) = dynamics(state,action)
-        loss += 100*last_height
-        loss += 100*last_vel
+    loss = 1
+    # don't hit the ground before it's time
+    if t > 1.0 and height < 0.0:
+        # loss += abs(height)*10000
+        return float('inf')
     
     # penalize relying on 100% throttle
     loss += 0.01*(action-80)**2
@@ -55,15 +53,18 @@ if __name__ == "__main__":
     plot_policy(costs, threshold=250)
 
     print("### DEMO: Start burn at 13m with 12m/s speed ###")
-    starting_state = state = nearest_state(3, 12, 13)
+    starting_state = nearest_state(3, 12, 13)
+    print(f"Starting cost: {costs[starting_state]}")
     sim(policy, starting_state)
 
     print("### DEMO: Start burn at 11m with 9/s speed ###")
-    starting_state = state = nearest_state(3, 9, 11)
+    starting_state = nearest_state(3, 9, 11)
+    print(f"Starting cost: {costs[starting_state]}")
     sim(policy, starting_state)
 
     print("### DEMO: Start burn at 2m with 15m/s speed ###")
-    starting_state = state = nearest_state(3.0, 15, 2)
+    starting_state = nearest_state(3.0, 15, 2)
+    print(f"Starting cost: {costs[starting_state]}")
     sim(policy, starting_state)
 
     # consider plotting the policy. at least a timeslice of it.

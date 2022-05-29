@@ -1,5 +1,9 @@
 import time
 from tqdm import tqdm
+import bisect
+from scipy import interpolate
+import numpy as np
+from Dynamics import nearest
 
 
 class ValueIterator:
@@ -10,9 +14,37 @@ class ValueIterator:
         self._actions = actions
         self._transition_func = transition_func
         self._loss_func = loss_func
+        self._time_keys, self._vel_keys, self._height_keys = zip(*states)
+        self._time_keys = sorted(set(self._time_keys))
+        self._vel_keys = sorted(set(self._vel_keys))
+        self._height_keys = sorted(set(self._height_keys))
 
     def _cost_func(self, state, action):
-        return self._costs[self._transition_func(state, action)] + self._loss_func(
+        t, v, h = self._transition_func(state, action)
+
+        # indices of nearest mesh neighbors
+        v1 = bisect.bisect_left(self._vel_keys, v) - 1
+        v2 = v1+1
+        h1 = bisect.bisect_left(self._height_keys, h) - 1
+        h2 = h1+1
+
+        # assert self._vel_keys[v1] <= v <= self._vel_keys[v2], f"{self._vel_keys[v1],v, self._vel_keys[v2]}"
+        # assert self._height_keys[h1] <= h <= self._height_keys[h2], f"Height must be able to go to {h}"
+
+        mesh_costs = np.ndarray([2,2])
+        for i,vv in enumerate([v1, v2]):
+            for j,hh in enumerate([h1, h2]):
+                vv = np.clip(vv, 0, len(self._vel_keys)-1)
+                hh = np.clip(hh, 0, len(self._height_keys)-1)
+
+                # print(vv,hh)
+                # print(nearest(self._time_keys, t), self._vel_keys[vv], self._height_keys[hh])
+                mesh_costs[i,j] = self._costs[nearest(self._time_keys, t), self._vel_keys[vv], self._height_keys[hh]]
+
+        f = interpolate.interp2d([v1, v2], [h1, h2], mesh_costs, kind='linear')
+        weighted_cost_at_next_state = f(v, h)
+
+        return weighted_cost_at_next_state + self._loss_func(
             state, action
         )
 
