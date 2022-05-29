@@ -3,7 +3,7 @@ import numpy as np
 import scipy.ndimage
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
-from Dynamics import nearest, nearest_state, dynamics_dt, HEIGHT_MAX, VEL_MAX
+from Dynamics import nearest, nearest_state, dynamics, dynamics_dt, HEIGHT_MAX, VEL_MAX, DT
 
 def plot_policy(policy, threshold=None):
     times = set()
@@ -43,7 +43,7 @@ def plot_policy(policy, threshold=None):
     def update(val):
         time_index = times.index(nearest(times, val))
         new_im = data[time_index,:,:]
-        new_im = scipy.ndimage.gaussian_filter(new_im, 1)
+        # new_im = scipy.ndimage.gaussian_filter(new_im, 1)
         im.set_data(new_im)
         colorbar.update_normal(im)
         colorbar.draw_all()
@@ -66,10 +66,12 @@ def sim(policy, state):
         heights.append(h)
         action = policy[nearest_state(*state)]
         actions.append(action/5)
+        # state = dynamics(state, action)
         state = dynamics_dt(state, action, SIM_DT)
         t, v, h = state
     
     plt.plot(times, heights, times, vels, times, actions)
+    plt.legend(labels=['height', 'speed', 'action/20'])
     plt.gca().invert_xaxis()
     plt.show()
 

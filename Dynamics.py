@@ -2,19 +2,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # The dataset says 3.45 but it's convenient if this is a multiple of DT
-TOTAL_BURN_TIME = 3.3333334
+TOTAL_BURN_TIME = 3.33333333333
 
 DT = 1 / 3
-TIME_BUCKETS = int(TOTAL_BURN_TIME * 1 / DT)
-VEL_BUCKETS = 50
+TIME_BUCKETS = int(TOTAL_BURN_TIME * 1 / DT) # don't touch
+VEL_BUCKETS = 60
 HEIGHT_BUCKETS = 200
 ACTION_BUCKETS = 20
 HEIGHT_MAX = 25
 VEL_MAX = 18
 
-times = np.linspace(0, TOTAL_BURN_TIME, TIME_BUCKETS)
-vels = np.linspace(0, VEL_MAX, VEL_BUCKETS)
-heights = np.linspace(0, HEIGHT_MAX, HEIGHT_BUCKETS)
+times = np.linspace(-DT, 3.33333333, 12)
+assert np.all((np.diff(times)-DT)<0.0000001)
+# Gotta allow it to go negative so that it can be punished for doing that
+vels = np.linspace(-2, VEL_MAX, VEL_BUCKETS)
+heights = np.linspace(-2, HEIGHT_MAX, HEIGHT_BUCKETS)
 actions = np.linspace(50, 100, ACTION_BUCKETS)
 
 valid_states = set()  # (time, vel, height)
@@ -112,7 +114,12 @@ def nearest_state(t, vel, height):
 
 def dynamics(state, action):
     t,v,h = dynamics_dt(state, action, DT)
-    return nearest_state(t,v,h)
+    if t < times[0]:
+        t = times[0]
+    old_t = t
+    t = nearest(times,t)
+    assert abs(old_t-t) < 0.000001, "Something about DT is broken!"
+    return (t,v,h)
 
 def dynamics_dt(state, action, dt):
     t, vel, height = state
@@ -127,7 +134,7 @@ if __name__ == "__main__":
     plt.gca().invert_xaxis()
     # Since we are discretizing with only a few time buckets, it's important that the result is not distorted by discretization.
     # Try plotting with TIME_BUCKETS=10 and with 1000 and make sure it looks similar
-    TIME_BUCKETS = 10
-    times = np.linspace(TOTAL_BURN_TIME, 0, TIME_BUCKETS)
+    # TIME_BUCKETS = 10
+    # times = np.linspace(TOTAL_BURN_TIME, 0, TIME_BUCKETS)
     plt.plot(times, [thrust(t) for t in times])
     plt.show()
