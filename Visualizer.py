@@ -57,6 +57,7 @@ def plot_policy(policy, threshold=None):
     plt.show()
 
 def sim(policy, state):
+    np.seterr('raise')
     SIM_DT = 1/100
     time_options, vel_options, height_options = extract_keys(policy)
     times = []
@@ -70,18 +71,23 @@ def sim(policy, state):
         vels.append(v)
         heights.append(h)
 
+        # TODO choose when to ignite motor
+
         # option 1: plot the transitions through the planned, discretized state space
         # action = policy[nearest_state(*state)]
         # state = dynamics(state, action)
 
         # option 2: plot the dynamics at a higher rate
-        # evaluate_times = (nearest(time_options, t+DT/2), nearest(time_options, t-DT/2))
-        # eval_weight = (t-evaluate_times[1])/(evaluate_times[0]-evaluate_times[1])
-        # assert eval_weight <= 1
-        # eval_actions = (weighted_evaluate(policy, time_options, vel_options, height_options, (evaluate_times[0], v, h)),
-        #                 weighted_evaluate(policy, time_options, vel_options, height_options, (evaluate_times[1], v, h)))
-        # action = eval_actions[0]*eval_weight + eval_actions[1]*(1-eval_weight)
-        action = weighted_evaluate(policy, time_options, vel_options, height_options, (nearest(time_options, t-DT), v, h))
+        evaluate_times = (nearest(time_options, t+DT/2), nearest(time_options, t-DT/2))
+        eval_weight = 1
+        if abs(evaluate_times[0] - evaluate_times[1]) > 0.00001:
+            eval_weight = (t-evaluate_times[1])/(evaluate_times[0]-evaluate_times[1])
+        assert eval_weight <= 1
+        eval_actions = (weighted_evaluate(policy, time_options, vel_options, height_options, (evaluate_times[0], v, h)),
+                        weighted_evaluate(policy, time_options, vel_options, height_options, (evaluate_times[1], v, h)))
+        action = eval_actions[0]*eval_weight + eval_actions[1]*(1-eval_weight)
+
+        # action = weighted_evaluate(policy, time_options, vel_options, height_options, (nearest(time_options, t-DT), v, h))
         state = dynamics_dt(state, action, SIM_DT)
 
         actions.append(action/10)

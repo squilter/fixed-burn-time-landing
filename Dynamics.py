@@ -5,20 +5,20 @@ import bisect
 # The dataset says 3.45 but it's convenient if this is a multiple of DT
 TOTAL_BURN_TIME = 3.333333333334
 
-DT = 1 / 3
+DT = 1 / 6
 TIME_BUCKETS = int(TOTAL_BURN_TIME * 1 / DT) # don't touch
-VEL_BUCKETS = 60
-HEIGHT_BUCKETS = 200
-ACTION_BUCKETS = 20
+VEL_BUCKETS = 50
+HEIGHT_BUCKETS = 150
+ACTION_BUCKETS = 15
 HEIGHT_MAX = 25
 VEL_MAX = 18
 
-times = np.linspace(-DT, 3.33333333, TIME_BUCKETS+2)
+times = np.linspace(-DT, TOTAL_BURN_TIME, TIME_BUCKETS+2)
 assert np.all((np.diff(times)-DT)<0.0000001)
 # Gotta allow it to go negative so that it can be punished for doing that
 vels = np.linspace(-2, VEL_MAX, VEL_BUCKETS)
 heights = np.linspace(-2, HEIGHT_MAX, HEIGHT_BUCKETS)
-actions = np.linspace(50, 100, ACTION_BUCKETS)
+actions = np.linspace(60, 100, ACTION_BUCKETS)
 
 valid_states = set()  # (time, vel, height)
 for t in times:
@@ -126,7 +126,7 @@ def dynamics_dt(state, action, dt):
     t, vel, height = state
     # Assume actuation is instantaneous
     new_vel = vel + (-(action / 100 * thrust(t)) / mass(t) + 9.8) * dt
-    new_height = height - new_vel * dt
+    new_height = height - vel * dt
     new_t = t - dt
     return (new_t, new_vel, new_height)
 
