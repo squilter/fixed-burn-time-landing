@@ -64,7 +64,7 @@ def sim(policy, state):
         times.append(t)
         vels.append(v)
         heights.append(h)
-        action = policy[nearest_state(*state)]
+        action = policy[nearest_state(*state)] # TODO weighted nearest neightbor here too
         actions.append(action/5)
         # state = dynamics(state, action)
         state = dynamics_dt(state, action, SIM_DT)

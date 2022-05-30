@@ -25,8 +25,7 @@ def loss(state, action):
     loss = 1
     # don't hit the ground before it's time
     if t > 1.0 and height < 0.0:
-        # loss += abs(height)*10000
-        return float('inf')
+        return 999999
     
     # penalize relying on 100% throttle
     loss += 0.01*(action-80)**2

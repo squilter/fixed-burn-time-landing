@@ -47,17 +47,35 @@ class ValueIterator:
         neighbors.append( (t, self._vel_keys[v2], self._height_keys[h1]) )
         neighbors.append( (t, self._vel_keys[v2], self._height_keys[h2]) )
 
-        # TODO use a distance metric that sums to 1
-        weights = [0.25, 0.25, 0.25, 0.25]
+        right_vel_weight = 1
+        right_height_weight = 1
+        if abs(self._vel_keys[v2] - self._vel_keys[v1]) > 0.00001:
+            right_vel_weight = (v - self._vel_keys[v1]) / (self._vel_keys[v2] - self._vel_keys[v1])
+        if abs(self._height_keys[h2] - self._height_keys[h1]) > 0.00001:
+            right_height_weight = (h - self._height_keys[h1]) / (self._height_keys[h2] - self._height_keys[h1])
+
+        weights = [1,1,1,1]
+        weights[0] = (1-right_vel_weight) * (1-right_height_weight)
+        weights[1] = (1-right_vel_weight) * right_height_weight
+        weights[2] = right_vel_weight * (1-right_height_weight)
+        weights[3] = right_vel_weight * right_height_weight
+        assert abs(np.sum(weights) - 1) < 0.000001
+
+        # weights = [0.25,0.25,0.25,0.25]
+        np.seterr('raise')
 
         weighted_cost_at_next_state = 0
-
         for s,w in zip(neighbors, weights):
             t,v,h = s
-            assert t in self._time_keys, f"{t}"
+            assert t in self._time_keys
             assert v in self._vel_keys
             assert h in self._height_keys
-            weighted_cost_at_next_state += w * self._costs[s]
+            assert not np.isnan(w)
+            assert not np.isnan(self._costs[s])
+            try:
+                weighted_cost_at_next_state += w * self._costs[s]
+            except FloatingPointError:
+                print(w, self._costs[s])
 
         return weighted_cost_at_next_state + self._loss_func(
             state, action
