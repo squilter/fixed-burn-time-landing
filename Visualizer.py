@@ -3,8 +3,9 @@ import numpy as np
 import scipy.ndimage
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
-from Dynamics import nearest, nearest_state, dynamics, dynamics_dt, HEIGHT_MAX, VEL_MAX, DT
+from Dynamics import nearest, nearest_state, dynamics, dynamics_dt, dynamics_dt_no_motor, HEIGHT_MAX, VEL_MAX, DT, TOTAL_BURN_TIME
 from ValueIteration import weighted_evaluate
+import numpy as np
 
 def extract_keys(policy):
     times = set()
@@ -20,7 +21,7 @@ def extract_keys(policy):
     vels.sort()
     heights = list(heights)
     heights.sort()
-    return (times, vels, heights)
+    return (np.array(times), np.array(vels), np.array(heights))
 
 def plot_policy(policy, threshold=None):
     times, vels, heights = extract_keys(policy)
@@ -45,7 +46,7 @@ def plot_policy(policy, threshold=None):
     colorbar = fig.colorbar(im, ax=main_ax)
 
     def update(val):
-        time_index = times.index(nearest(times, val))
+        time_index = int(np.where(times == nearest(times,val))[0])
         new_im = data[time_index,:,:]
         # new_im = scipy.ndimage.gaussian_filter(new_im, 1)
         im.set_data(new_im)
@@ -56,7 +57,7 @@ def plot_policy(policy, threshold=None):
     my_slider.on_changed(update)
     plt.show()
 
-def sim(policy, state):
+def sim(policy, apogee):
     np.seterr('raise')
     SIM_DT = 1/100
     time_options, vel_options, height_options = extract_keys(policy)
@@ -65,13 +66,22 @@ def sim(policy, state):
     heights = []
     actions = []
 
+    state = (TOTAL_BURN_TIME, 0, apogee)
     t, v, h = state
+
+    # This ignition policy was chosen by inspecting the policy cost-to-go at the motor ignition point
+    while h/2 > v:
+        # free fallin'
+        state = dynamics_dt_no_motor(state, SIM_DT)
+        t, v, h = state
+        vels.append(v)
+        heights.append(h)
+        actions.append(0)
+
     while t >= 0:
         times.append(t)
         vels.append(v)
         heights.append(h)
-
-        # TODO choose when to ignite motor
 
         # option 1: plot the transitions through the planned, discretized state space
         # action = policy[nearest_state(*state)]
@@ -93,9 +103,10 @@ def sim(policy, state):
         actions.append(action/10)
         t, v, h = state
     
-    plt.plot(times, heights, times, vels, times, actions)
+    num_steps = len(heights)
+    sim_times = np.linspace(0, num_steps*SIM_DT, num_steps)
+    plt.plot(sim_times, heights, sim_times, vels, sim_times, actions)
     plt.legend(labels=['height', 'speed', 'action/20'])
-    plt.gca().invert_xaxis()
     plt.show()
 
 

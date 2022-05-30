@@ -130,6 +130,13 @@ def dynamics_dt(state, action, dt):
     new_t = t - dt
     return (new_t, new_vel, new_height)
 
+def dynamics_dt_no_motor(state, dt):
+    t, vel, height = state
+    new_vel = vel + 9.8*dt
+    new_height = height - vel * dt
+    new_t = t # t represents motor burn time remaining, so no change
+    return (new_t, new_vel, new_height)
+
 # Plot thrust curve
 if __name__ == "__main__":
     plt.gca().invert_xaxis()

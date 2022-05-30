@@ -50,18 +50,7 @@ if __name__ == "__main__":
 
     plot_policy(policy)
     plot_policy(costs, threshold=500)
-
-    print("### DEMO: Start burn at 13m with 12m/s speed ###")
-    starting_state = nearest_state(3, 12, 13)
-    print(f"Starting cost: {costs[starting_state]}")
-    sim(policy, starting_state)
-
-    print("### DEMO: Start burn at 11m with 9/s speed ###")
-    starting_state = nearest_state(3, 9, 11)
-    print(f"Starting cost: {costs[starting_state]}")
-    sim(policy, starting_state)
-
-    print("### DEMO: Start burn at 2m with 15m/s speed ###")
-    starting_state = nearest_state(3.0, 15, 2)
-    print(f"Starting cost: {costs[starting_state]}")
-    sim(policy, starting_state)
+    sim(policy, 25)
+    sim(policy, 18)
+    sim(policy, 14)
+    sim(policy, 35)
