@@ -19,7 +19,7 @@ def loss(state, action):
     assert action in actions
 
     # Penalize crashing
-    if t < 0:
+    if t < -EPS:
         return 100*abs(vel) + 1000*abs(height)
 
     loss = 1
@@ -49,7 +49,7 @@ if __name__ == "__main__":
             policy, costs = pickle.load(f)
 
     plot_policy(policy)
-    plot_policy(costs, threshold=250)
+    plot_policy(costs, threshold=500)
 
     print("### DEMO: Start burn at 13m with 12m/s speed ###")
     starting_state = nearest_state(3, 12, 13)

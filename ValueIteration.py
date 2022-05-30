@@ -5,6 +5,59 @@ from scipy import interpolate
 import numpy as np
 from Dynamics import nearest
 
+# Evaluates a cost function or a control policy using bilinear interpolation
+def weighted_evaluate(policy, time_keys, vel_keys, height_keys, state):
+    t,v,h=state
+    # Find nearest 4 neighbors to the resulting state
+    # Calculate weights for them that sum to 1
+    # Generate the weighted average of the resulting cost
+
+    # indices of nearest mesh neighbors
+    v1 = bisect.bisect_left(vel_keys, v) - 1
+    v2 = v1+1
+    h1 = bisect.bisect_left(height_keys, h) - 1
+    h2 = h1+1
+
+    if v1 < 0 :
+        v1 = 0
+    if v2 > len(vel_keys)-1:
+        v2 = len(vel_keys)-1
+    if h1 < 0 :
+        h1 = 0
+    if h2 > len(height_keys)-1:
+        h2 = len(height_keys)-1
+
+    neighbors = []
+    neighbors.append( (t, vel_keys[v1], height_keys[h1]) )
+    neighbors.append( (t, vel_keys[v1], height_keys[h2]) )
+    neighbors.append( (t, vel_keys[v2], height_keys[h1]) )
+    neighbors.append( (t, vel_keys[v2], height_keys[h2]) )
+
+    right_vel_weight = 1
+    right_height_weight = 1
+    if abs(vel_keys[v2] - vel_keys[v1]) > 0.00001:
+        right_vel_weight = (v - vel_keys[v1]) / (vel_keys[v2] - vel_keys[v1])
+    if abs(height_keys[h2] - height_keys[h1]) > 0.00001:
+        right_height_weight = (h - height_keys[h1]) / (height_keys[h2] - height_keys[h1])
+
+    weights = [1,1,1,1]
+    weights[0] = (1-right_vel_weight) * (1-right_height_weight)
+    weights[1] = (1-right_vel_weight) * right_height_weight
+    weights[2] = right_vel_weight * (1-right_height_weight)
+    weights[3] = right_vel_weight * right_height_weight
+    assert abs(np.sum(weights) - 1) < 0.000001
+
+    weighted_evaluate = 0
+    for s,w in zip(neighbors, weights):
+        t,v,h = s
+        assert t in time_keys, f"{t}"
+        assert v in vel_keys
+        assert h in height_keys
+        assert not np.isnan(w)
+        assert not np.isnan(policy[s])
+        weighted_evaluate += w * policy[s]
+    
+    return weighted_evaluate
 
 class ValueIterator:
     def __init__(self, states, actions, transition_func, loss_func):
@@ -20,62 +73,8 @@ class ValueIterator:
         self._height_keys = sorted(set(self._height_keys))
 
     def _cost_func(self, state, action):
-        t, v, h = self._transition_func(state, action)
-
-        # Find nearest 4 neighbors to the resulting state
-        # Calculate weights for them that sum to 1
-        # Generate the weighted average of the resulting cost
-
-        # indices of nearest mesh neighbors
-        v1 = bisect.bisect_left(self._vel_keys, v) - 1
-        v2 = v1+1
-        h1 = bisect.bisect_left(self._height_keys, h) - 1
-        h2 = h1+1
-
-        if v1 < 0 :
-            v1 = 0
-        if v2 > len(self._vel_keys)-1:
-            v2 = len(self._vel_keys)-1
-        if h1 < 0 :
-            h1 = 0
-        if h2 > len(self._height_keys)-1:
-            h2 = len(self._height_keys)-1
-
-        neighbors = []
-        neighbors.append( (t, self._vel_keys[v1], self._height_keys[h1]) )
-        neighbors.append( (t, self._vel_keys[v1], self._height_keys[h2]) )
-        neighbors.append( (t, self._vel_keys[v2], self._height_keys[h1]) )
-        neighbors.append( (t, self._vel_keys[v2], self._height_keys[h2]) )
-
-        right_vel_weight = 1
-        right_height_weight = 1
-        if abs(self._vel_keys[v2] - self._vel_keys[v1]) > 0.00001:
-            right_vel_weight = (v - self._vel_keys[v1]) / (self._vel_keys[v2] - self._vel_keys[v1])
-        if abs(self._height_keys[h2] - self._height_keys[h1]) > 0.00001:
-            right_height_weight = (h - self._height_keys[h1]) / (self._height_keys[h2] - self._height_keys[h1])
-
-        weights = [1,1,1,1]
-        weights[0] = (1-right_vel_weight) * (1-right_height_weight)
-        weights[1] = (1-right_vel_weight) * right_height_weight
-        weights[2] = right_vel_weight * (1-right_height_weight)
-        weights[3] = right_vel_weight * right_height_weight
-        assert abs(np.sum(weights) - 1) < 0.000001
-
-        # weights = [0.25,0.25,0.25,0.25]
-        np.seterr('raise')
-
-        weighted_cost_at_next_state = 0
-        for s,w in zip(neighbors, weights):
-            t,v,h = s
-            assert t in self._time_keys
-            assert v in self._vel_keys
-            assert h in self._height_keys
-            assert not np.isnan(w)
-            assert not np.isnan(self._costs[s])
-            try:
-                weighted_cost_at_next_state += w * self._costs[s]
-            except FloatingPointError:
-                print(w, self._costs[s])
+        new_state = self._transition_func(state, action)
+        weighted_cost_at_next_state = weighted_evaluate(self._costs, self._time_keys, self._vel_keys, self._height_keys, new_state)
 
         return weighted_cost_at_next_state + self._loss_func(
             state, action
@@ -115,3 +114,4 @@ class ValueIterator:
             print(f"Batch {i+1}/{batches} complete after {time.time() - start_time:.2f}s. ", end="")
             print(f"Landing from {100*self._count_non_crashing_states()/(len(self._costs.keys())):.2f}% of starting configurations.")
         return policy, costs
+

@@ -1,8 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import bisect
 
 # The dataset says 3.45 but it's convenient if this is a multiple of DT
-TOTAL_BURN_TIME = 3.33333333333
+TOTAL_BURN_TIME = 3.333333333334
 
 DT = 1 / 3
 TIME_BUCKETS = int(TOTAL_BURN_TIME * 1 / DT) # don't touch
@@ -12,7 +13,7 @@ ACTION_BUCKETS = 20
 HEIGHT_MAX = 25
 VEL_MAX = 18
 
-times = np.linspace(-DT, 3.33333333, 12)
+times = np.linspace(-DT, 3.33333333, TIME_BUCKETS+2)
 assert np.all((np.diff(times)-DT)<0.0000001)
 # Gotta allow it to go negative so that it can be punished for doing that
 vels = np.linspace(-2, VEL_MAX, VEL_BUCKETS)

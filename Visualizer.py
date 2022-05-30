@@ -4,8 +4,9 @@ import scipy.ndimage
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
 from Dynamics import nearest, nearest_state, dynamics, dynamics_dt, HEIGHT_MAX, VEL_MAX, DT
+from ValueIteration import weighted_evaluate
 
-def plot_policy(policy, threshold=None):
+def extract_keys(policy):
     times = set()
     vels = set()
     heights = set()
@@ -19,7 +20,10 @@ def plot_policy(policy, threshold=None):
     vels.sort()
     heights = list(heights)
     heights.sort()
+    return (times, vels, heights)
 
+def plot_policy(policy, threshold=None):
+    times, vels, heights = extract_keys(policy)
     data = np.ndarray([len(times), len(heights), len(vels)])
 
     for i, t in enumerate(times):
@@ -54,20 +58,33 @@ def plot_policy(policy, threshold=None):
 
 def sim(policy, state):
     SIM_DT = 1/100
+    time_options, vel_options, height_options = extract_keys(policy)
     times = []
     vels = []
-    actions = []
     heights = []
+    actions = []
 
     t, v, h = state
     while t >= 0:
         times.append(t)
         vels.append(v)
         heights.append(h)
-        action = policy[nearest_state(*state)] # TODO weighted nearest neightbor here too
-        actions.append(action/5)
+
+        # option 1: plot the transitions through the planned, discretized state space
+        # action = policy[nearest_state(*state)]
         # state = dynamics(state, action)
+
+        # option 2: plot the dynamics at a higher rate
+        # evaluate_times = (nearest(time_options, t+DT/2), nearest(time_options, t-DT/2))
+        # eval_weight = (t-evaluate_times[1])/(evaluate_times[0]-evaluate_times[1])
+        # assert eval_weight <= 1
+        # eval_actions = (weighted_evaluate(policy, time_options, vel_options, height_options, (evaluate_times[0], v, h)),
+        #                 weighted_evaluate(policy, time_options, vel_options, height_options, (evaluate_times[1], v, h)))
+        # action = eval_actions[0]*eval_weight + eval_actions[1]*(1-eval_weight)
+        action = weighted_evaluate(policy, time_options, vel_options, height_options, (nearest(time_options, t-DT), v, h))
         state = dynamics_dt(state, action, SIM_DT)
+
+        actions.append(action/10)
         t, v, h = state
     
     plt.plot(times, heights, times, vels, times, actions)
