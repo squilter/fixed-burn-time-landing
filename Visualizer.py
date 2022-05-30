@@ -23,7 +23,7 @@ def extract_keys(policy):
     heights.sort()
     return (np.array(times), np.array(vels), np.array(heights))
 
-def plot_policy(policy, threshold=None):
+def plot_policy(policy, threshold=None, result_label=""):
     times, vels, heights = extract_keys(policy)
     data = np.ndarray([len(times), len(heights), len(vels)])
 
@@ -44,6 +44,7 @@ def plot_policy(policy, threshold=None):
     main_ax.set_ylabel("Height (m)")
     my_slider = Slider(slider_ax, 'Burn time remaining (s)', valmin = 0, valmax = max(times), valinit = 0)
     colorbar = fig.colorbar(im, ax=main_ax)
+    colorbar.set_label(result_label, rotation=270)
 
     def update(val):
         time_index = int(np.where(times == nearest(times,val))[0])

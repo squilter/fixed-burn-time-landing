@@ -20,7 +20,9 @@ def loss(state, action):
 
     # Penalize crashing
     if t < -EPS:
-        return 100*abs(vel) + 200*abs(height)
+        return abs(vel*10)**2 + (height*20)**2
+    
+    # consider penalizing the energy at t=0 (kinetic+potential)
 
     loss = 1
     # don't hit the ground before it's time
@@ -48,8 +50,8 @@ if __name__ == "__main__":
         with open("policy.p", "rb") as f:
             policy, costs = pickle.load(f)
 
-    plot_policy(policy)
-    plot_policy(costs, threshold=500)
+    plot_policy(policy, result_label='Throttle')
+    plot_policy(costs, threshold=500, result_label='Feasibility')
     sim(policy, 25)
     sim(policy, 18)
     sim(policy, 14)

@@ -98,13 +98,6 @@ class ValueIterator:
             self._costs[state] = new_cost
         return policy, self._costs
 
-    def _count_non_crashing_states(self):
-        good = 0
-        for c in self._costs.values():
-            if c != float("inf"):
-                good += 1
-        return good
-
     def calc_policy(self, batches=1):
         start_time = time.time()
         policy = None
@@ -112,6 +105,5 @@ class ValueIterator:
         for i in range(batches):
             policy, costs = self._value_iteration_batch_update()
             print(f"Batch {i+1}/{batches} complete after {time.time() - start_time:.2f}s. ", end="")
-            print(f"Landing from {100*self._count_non_crashing_states()/(len(self._costs.keys())):.2f}% of starting configurations.")
         return policy, costs
 
