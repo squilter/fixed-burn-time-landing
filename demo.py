@@ -28,7 +28,7 @@ def loss(state, action):
         loss += t**2 * (10*height-0.5)**2
     
     # penalize relying on 100% throttle. Prefer 80%.
-    loss += 0.01*(action-80)**2
+    loss += 0.1*(action-80)**2
 
     return loss
 

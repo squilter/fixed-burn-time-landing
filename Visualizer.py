@@ -37,12 +37,12 @@ def plot_policy(policy, threshold=None, result_label=""):
 
     fig = plt.figure(1, figsize=(6,6))
     main_ax = fig.add_axes([0.1,0.2,0.8,0.7])
-    slider_ax  = fig.add_axes([0.1,0.1,0.8,0.05])
-    im = main_ax.imshow(scipy.ndimage.gaussian_filter(data[0,:,:], 1), origin='lower', aspect='auto', vmin=0, vmax=100)
+    slider_ax  = fig.add_axes([0.32,0.07,0.5,0.05])
+    im = main_ax.imshow(scipy.ndimage.gaussian_filter(data[-1,:,:], 1), origin='lower', aspect='auto', vmin=0, vmax=100)
     im.set_extent([0, VEL_MAX, 0, HEIGHT_MAX])
-    main_ax.set_xlabel("Speed towards ground (m/s)")
+    main_ax.set_xlabel("Speed towards ground (m/s): ")
     main_ax.set_ylabel("Height (m)")
-    my_slider = Slider(slider_ax, 'Burn time remaining (s)', valmin = 0, valmax = max(times), valinit = 0)
+    my_slider = Slider(slider_ax, 'Burn time remaining (s)', valmin = 0, valmax = max(times), valinit = max(times), valstep=DT)
     colorbar = fig.colorbar(im, ax=main_ax)
     colorbar.set_label(result_label, rotation=270)
 
@@ -109,7 +109,7 @@ def sim(policy, apogee):
     num_steps = len(heights)
     sim_times = np.linspace(0, num_steps*SIM_DT, num_steps)
     plt.plot(sim_times, heights, sim_times, vels, sim_times, actions)
-    plt.legend(labels=['height', 'speed', 'action/20'])
+    plt.legend(labels=['height', 'speed', 'throttle/10'])
     plt.show()
 
 
