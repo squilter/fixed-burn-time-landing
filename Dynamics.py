@@ -7,10 +7,10 @@ TOTAL_BURN_TIME = 3.333333333334
 
 DT = 1 / 6
 TIME_BUCKETS = int(TOTAL_BURN_TIME * 1 / DT) # don't touch
-VEL_BUCKETS = 50
-HEIGHT_BUCKETS = 150
-ACTION_BUCKETS = 15
-HEIGHT_MAX = 25
+VEL_BUCKETS = 35
+HEIGHT_BUCKETS = 200
+ACTION_BUCKETS = 25
+HEIGHT_MAX = 40
 VEL_MAX = 18
 
 times = np.linspace(-DT, TOTAL_BURN_TIME, TIME_BUCKETS+2)
@@ -18,7 +18,7 @@ assert np.all((np.diff(times)-DT)<0.0000001)
 # Gotta allow it to go negative so that it can be punished for doing that
 vels = np.linspace(-2, VEL_MAX, VEL_BUCKETS)
 heights = np.linspace(-2, HEIGHT_MAX, HEIGHT_BUCKETS)
-actions = np.linspace(60, 100, ACTION_BUCKETS)
+actions = np.linspace(40, 100, ACTION_BUCKETS)
 
 valid_states = set()  # (time, vel, height)
 for t in times:

@@ -85,6 +85,7 @@ def sim(policy, apogee):
         heights.append(h)
 
         # option 1: plot the transitions through the planned, discretized state space
+        # set SIM_DT smaller for dynamics_no_motor as well to use this
         # action = policy[nearest_state(*state)]
         # state = dynamics(state, action)
 
@@ -94,10 +95,11 @@ def sim(policy, apogee):
         if abs(evaluate_times[0] - evaluate_times[1]) > 0.00001:
             eval_weight = (t-evaluate_times[1])/(evaluate_times[0]-evaluate_times[1])
         assert eval_weight <= 1
+        # Linearly interpolate along all 3 dimensions for lookup
         eval_actions = (weighted_evaluate(policy, time_options, vel_options, height_options, (evaluate_times[0], v, h)),
                         weighted_evaluate(policy, time_options, vel_options, height_options, (evaluate_times[1], v, h)))
         action = eval_actions[0]*eval_weight + eval_actions[1]*(1-eval_weight)
-
+        # This one linearly interpolates only for 2 dims and chooses nearest time:
         # action = weighted_evaluate(policy, time_options, vel_options, height_options, (nearest(time_options, t-DT), v, h))
         state = dynamics_dt(state, action, SIM_DT)
 

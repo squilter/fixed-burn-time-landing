@@ -20,16 +20,14 @@ def loss(state, action):
 
     # Penalize crashing
     if t < -EPS:
-        return abs(vel*10)**2 + (height*20)**2
-    
-    # consider penalizing the energy at t=0 (kinetic+potential)
+        return (height*10)**2 + (vel*20)**2
 
     loss = 1
     # don't hit the ground before it's time
-    if t > 1.0 and height <= 0.0:
-        return 999999
+    if t > 1.0 and height <= 0.5:
+        loss += t**2 * (10*height-0.5)**2
     
-    # penalize relying on 100% throttle
+    # penalize relying on 100% throttle. Prefer 80%.
     loss += 0.01*(action-80)**2
 
     return loss

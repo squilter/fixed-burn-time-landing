@@ -1,6 +1,8 @@
 # fixed-burn-time-landing
 
-Generates a big lookup table for landing. Use the following for lookup:
+Generate an optimal control policy for throttling a model rocket motor to land a model rocket softly. The tricky part is that the motor burns for about 3.5 seconds and you can't stop it early.
+
+This code sets up the problem as a discrete-time dynamic programming problem, and solves it through backward induction. The result of running the demo is a big lookup table, giving the ideal throttle based on the state of the vehicle, defined as:
 - burn time remaining
 - speed
 - height
