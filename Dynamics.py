@@ -5,7 +5,7 @@ import bisect
 # The dataset says 3.45 but it's convenient if this is a multiple of DT
 TOTAL_BURN_TIME = 3.333333333334
 
-DT = 1 / 6
+DT = 1 / 3 # must be something like 1/3, 1/6, 1/12
 TIME_BUCKETS = int(TOTAL_BURN_TIME * 1 / DT) # don't touch
 VEL_BUCKETS = 35
 HEIGHT_BUCKETS = 200
