@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from Dynamics import *
 from ValueIteration import ValueIterator
 from Visualizer import plot_policy, sim
+from autocoder import write_policy
 
 EPS = 0.01
 
@@ -54,3 +55,4 @@ if __name__ == "__main__":
     sim(policy, 18)
     sim(policy, 14)
     sim(policy, 35)
+    write_policy(policy)
