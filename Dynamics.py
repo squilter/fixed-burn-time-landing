@@ -8,17 +8,19 @@ TOTAL_BURN_TIME = 3.333333333334
 
 DT = 1 / 3 # must be something like 1/3, 1/6, 1/12
 TIME_BUCKETS = int(TOTAL_BURN_TIME * 1 / DT) # don't touch
-VEL_BUCKETS = 35
-HEIGHT_BUCKETS = 200
+VEL_BUCKETS = 30
+HEIGHT_BUCKETS = 150
 ACTION_BUCKETS = 21
-HEIGHT_MAX = 40
+HEIGHT_MAX = 30
 VEL_MAX = 18
+VEL_MIN=-2
+HEIGHT_MIN=-2
 
 times = np.linspace(-DT, TOTAL_BURN_TIME, TIME_BUCKETS+2)
 assert np.all((np.diff(times)-DT)<0.0000001)
 # Gotta allow it to go negative so that it can be punished for doing that
-vels = np.linspace(-2, VEL_MAX, VEL_BUCKETS)
-heights = np.linspace(-2, HEIGHT_MAX, HEIGHT_BUCKETS)
+vels = np.linspace(VEL_MIN, VEL_MAX, VEL_BUCKETS)
+heights = np.linspace(HEIGHT_MIN, HEIGHT_MAX, HEIGHT_BUCKETS)
 # best if these are ints because we write them to memory as uint8's:
 actions = np.linspace(40, 100, ACTION_BUCKETS)
 assert(np.all([a.is_integer() for a in actions]))
@@ -99,6 +101,7 @@ def thrust(burn_time_remaining):
     return np.interp(time_lookup, time, thrust)
 
 # integration is expensive so just save the result for subsequent calls
+# TODO check this again
 dv_precomputed = {}
 def delta_v(t0, t1, action):
     if (t0, t1, action) not in dv_precomputed:

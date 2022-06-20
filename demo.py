@@ -19,9 +19,12 @@ def loss(state, action):
     assert state in valid_states
     assert action in actions
 
+    if t < -EPS:
+        return 0
+
     # Penalize crashing
     if t < EPS:
-        return (height*10)**2 + (vel*10)**2
+        return (height*10)**2 + (vel*10)**2 + abs(action-80)/1000
 
     loss = 1
     # don't hit the ground before it's time
@@ -51,7 +54,7 @@ if __name__ == "__main__":
             policy, costs = pickle.load(f)
 
     plot_policy(policy, result_label='Throttle')
-    plot_policy(costs, threshold=5000, result_label='Feasibility')
+    plot_policy(costs, threshold=5, result_label='Feasibility')
     sim(policy, 25)
     sim(policy, 18)
     sim(policy, 14)
