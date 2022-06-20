@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import bisect
+from scipy import integrate
 
 # The dataset says 3.45 but it's convenient if this is a multiple of DT
 TOTAL_BURN_TIME = 3.333333333334
@@ -92,12 +93,19 @@ def thrust(burn_time_remaining):
         0,
     ]
 
-    # Shifting the dataset 50ms makes it fit much better with dt=1/3
-    time_lookup = TOTAL_BURN_TIME - burn_time_remaining + 0.05
+    time_lookup = TOTAL_BURN_TIME - burn_time_remaining
     if time_lookup < 0 or time_lookup > 3.45:
         return 0
     return np.interp(time_lookup, time, thrust)
 
+# integration is expensive so just save the result for subsequent calls
+dv_precomputed = {}
+def delta_v(t0, t1, action):
+    if (t0, t1, action) not in dv_precomputed:
+        f = lambda t : thrust(t)/mass(t)
+        dv_precomputed[(t0, t1, action)] = (action / 100) * integrate.quad(f, t1, t0)[0]
+
+    return dv_precomputed[(t0, t1, action)]
 
 def mass(burn_time_remaining):
     # From a screengrab, seemed like mass was 1.1kg before burn started and 1.04kg after it finished
@@ -127,24 +135,21 @@ def dynamics(state, action):
 def dynamics_dt(state, action, dt):
     t, vel, height = state
     # Assume actuation is instantaneous
-    new_vel = vel + (-(action / 100 * thrust(t)) / mass(t) + 9.8) * dt
-    new_height = height - vel * dt
     new_t = t - dt
+    new_vel = vel - delta_v(t, new_t, action) + 9.8 * dt
+    new_height = height - (vel+new_vel)/2 * dt
     return (new_t, new_vel, new_height)
 
 def dynamics_dt_no_motor(state, dt):
     t, vel, height = state
     new_vel = vel + 9.8*dt
-    new_height = height - vel * dt
+    new_height = height - (vel+new_vel)/2 * dt
     new_t = t # t represents motor burn time remaining, so no change
     return (new_t, new_vel, new_height)
 
 # Plot thrust curve
 if __name__ == "__main__":
     plt.gca().invert_xaxis()
-    # Since we are discretizing with only a few time buckets, it's important that the result is not distorted by discretization.
-    # Try plotting with TIME_BUCKETS=10 and with 1000 and make sure it looks similar
-    # TIME_BUCKETS = 10
-    # times = np.linspace(TOTAL_BURN_TIME, 0, TIME_BUCKETS)
-    plt.plot(times, [thrust(t) for t in times])
+    ts = np.linspace(TOTAL_BURN_TIME, 0, 1000)
+    plt.plot(ts, [thrust(t) for t in ts])
     plt.show()
