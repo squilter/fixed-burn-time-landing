@@ -20,8 +20,8 @@ def loss(state, action):
     assert action in actions
 
     # Penalize crashing
-    if t < -EPS:
-        return (height*10)**2 + (vel*20)**2
+    if t < EPS:
+        return (height*10)**2 + (vel*10)**2
 
     loss = 1
     # don't hit the ground before it's time
@@ -42,7 +42,8 @@ if __name__ == "__main__":
         print(f"Speed Options:\n{vels}")
         print(f"Height Options:\n{heights}")
         valueIterator = ValueIterator(valid_states, actions, dynamics, loss)
-        policy, costs = valueIterator.calc_policy()
+        # sorting on time=descending requires only 1 batch. This is called backward induction.
+        policy, costs = valueIterator.calc_policy(sort_index=0, batches=1)
         with open("policy.p", "wb") as f:
             pickle.dump((policy, costs), f)
     else:

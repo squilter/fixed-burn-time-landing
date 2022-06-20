@@ -80,12 +80,11 @@ class ValueIterator:
             state, action
         )
 
-    def _value_iteration_batch_update(self):
+    def _value_iteration_batch_update(self, sort_index):
         states_to_visit = list(self._costs.keys())
 
-        # Big brain alert: since every possible action causes the same decrease in t,
-        # we can run value iteration on t increasing and it converges in a single batch
-        states_to_visit.sort(key=lambda x: x[0])
+        if sort_index is not None:
+            states_to_visit.sort(key=lambda x: x[0])
 
         policy = {}
         for state in tqdm(states_to_visit, desc="Batch Update"):
@@ -98,12 +97,12 @@ class ValueIterator:
             self._costs[state] = new_cost
         return policy, self._costs
 
-    def calc_policy(self, batches=1):
+    def calc_policy(self, sort_index = None, batches=10):
         start_time = time.time()
         policy = None
         costs = None
         for i in range(batches):
-            policy, costs = self._value_iteration_batch_update()
+            policy, costs = self._value_iteration_batch_update(sort_index)
             print(f"Batch {i+1}/{batches} complete after {time.time() - start_time:.2f}s. ", end="")
         return policy, costs
 
