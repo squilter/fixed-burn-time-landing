@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 from Dynamics import *
 from ValueIteration import ValueIterator
-from Visualizer import plot_policy, sim
+from Visualizer import plot_policy, plot_sim
 from autocoder import write_policy
 
 EPS = 0.01
@@ -53,10 +53,9 @@ if __name__ == "__main__":
         with open("policy.p", "rb") as f:
             policy, costs = pickle.load(f)
 
-    plot_policy(policy, costs)
-    # plot_policy(costs, threshold=5, result_label='Feasibility')
-    sim(policy, 25)
-    sim(policy, 18)
-    sim(policy, 14)
-    sim(policy, 35)
     write_policy(policy)
+    plot_policy(policy, costs)
+    plot_sim(policy, 25)
+    plot_sim(policy, 18)
+    plot_sim(policy, 14)
+    plot_sim(policy, 35)
