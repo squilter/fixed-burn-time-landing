@@ -59,7 +59,6 @@ def sim(policy, apogee):
     np.seterr('raise')
     SIM_DT = 1/100
     time_options, vel_options, height_options = extract_keys(policy)
-    times = []
     vels = []
     heights = []
     actions = []
@@ -68,7 +67,7 @@ def sim(policy, apogee):
     t, v, h = state
 
     # This ignition policy was chosen by inspecting the policy cost-to-go at the motor ignition point
-    while h/2 > v:
+    while h*12.5/22 > v:
         # free fallin'
         state = dynamics_dt_no_motor(state, SIM_DT)
         t, v, h = state
@@ -79,17 +78,15 @@ def sim(policy, apogee):
     action = 100
     t_next_action = float('inf')
     while t >= 0:
-        times.append(t)
-        vels.append(v)
-        heights.append(h)
-
         if t <= t_next_action:
             action = weighted_evaluate(policy, time_options, vel_options, height_options, (nearest(time_options, t), v, h))
             t_next_action = nearest(time_options, t-DT)
         state = dynamics_dt(state, action, SIM_DT)
 
-        actions.append(action/10)
         t, v, h = state
+        vels.append(v)
+        heights.append(h)
+        actions.append(action/10)
     
     num_steps = len(heights)
     sim_times = np.linspace(0, num_steps*SIM_DT, num_steps)
