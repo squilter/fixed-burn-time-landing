@@ -53,8 +53,8 @@ if __name__ == "__main__":
         with open("policy.p", "rb") as f:
             policy, costs = pickle.load(f)
 
-    plot_policy(policy, result_label='Throttle')
-    plot_policy(costs, threshold=5, result_label='Feasibility')
+    plot_policy(policy, costs)
+    # plot_policy(costs, threshold=5, result_label='Feasibility')
     sim(policy, 25)
     sim(policy, 18)
     sim(policy, 14)

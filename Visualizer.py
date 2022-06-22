@@ -23,36 +23,53 @@ def extract_keys(policy):
     heights.sort()
     return (np.array(times), np.array(vels), np.array(heights))
 
-def plot_policy(policy, threshold=1, result_label=""):
+def plot_policy(policy, cost):
     times, vels, heights = extract_keys(policy)
-    data = np.ndarray([len(times), len(heights), len(vels)])
+    data_policy = np.ndarray([len(times), len(heights), len(vels)])
+    data_cost = np.ndarray([len(times), len(heights), len(vels)])
 
     for i, t in enumerate(times):
         for j, v in enumerate(vels):
             for k, h in enumerate(heights):
-                data[i, k, j] = policy[(t, v, h)]
+                data_policy[i, k, j] = policy[(t, v, h)]
+                data_cost[i, k, j] = cost[(t, v, h)]
 
-    fig = plt.figure(1, figsize=(6,6))
-    main_ax = fig.add_axes([0.1,0.2,0.8,0.7])
-    slider_ax  = fig.add_axes([0.32,0.07,0.5,0.05])
-    im = main_ax.imshow(scipy.ndimage.gaussian_filter(data[-1,:,:], 1), origin='lower', aspect='auto', vmin=0, vmax=100, cmap='inferno')
+    fig = plt.figure(1, figsize=(12,6))
+    action_ax = fig.add_axes([0.1,0.2,0.4,0.7])
+    cost_ax = fig.add_axes([0.55,0.2,0.4,0.7])
+    slider_ax  = fig.add_axes([0.2,0.07,0.3,0.05])
+    im = action_ax.imshow(scipy.ndimage.gaussian_filter(data_policy[-1,:,:], 1), origin='lower', aspect='auto', vmin=0, vmax=100, cmap='inferno')
+    im2 = cost_ax.imshow(scipy.ndimage.gaussian_filter(data_cost[-1,:,:], 1), origin='lower', aspect='auto', vmin=0, vmax=100, cmap='inferno')
     im.set_extent([VEL_MIN, VEL_MAX, HEIGHT_MIN, HEIGHT_MAX])
-    main_ax.set_xlabel("Speed towards ground (m/s): ")
-    main_ax.set_ylabel("Height (m)")
-    my_slider = Slider(slider_ax, 'Burn time remaining (s)', valmin = 0, valmax = max(times), valinit = max(times), valstep=DT)
-    colorbar = fig.colorbar(im, ax=main_ax)
-    colorbar.set_label(result_label, rotation=270)
+    im2.set_extent([VEL_MIN, VEL_MAX, HEIGHT_MIN, HEIGHT_MAX])
+    action_ax.set_xlabel("Speed towards ground (m/s): ")
+    action_ax.set_ylabel("Height (m)")
+    cost_ax.set_xlabel("Speed towards ground (m/s): ")
+    cost_ax.set_ylabel("Height (m)")
+    slider = Slider(slider_ax, 'Burn time remaining (s)', valmin = 0, valmax = max(times), valinit = max(times), valstep=DT)
+    colorbar = fig.colorbar(im, ax=action_ax)
+    colorbar.set_label("Throttle", rotation=270)
 
     def update(val):
         time_index = int(np.where(times == nearest(times,val))[0])
-        new_im = data[time_index,:,:]
         # new_im = scipy.ndimage.gaussian_filter(new_im, 1)
-        im.set_data(new_im/threshold)
+        im.set_data(data_policy[time_index,:,:])
+        im2.set_data(data_cost[time_index,:,:]/5)
         colorbar.update_normal(im)
         colorbar.draw_all()
         plt.draw()
     
-    my_slider.on_changed(update)
+    def disp_mouse(event):
+        # TODO add third subplot that shows path to landing
+        height = event.ydata
+        vel = event.xdata
+        time = slider.val
+        if height is not None and vel is not None:
+            print(f"Height {height}, vel {vel}, time {time}")
+    
+    fig.canvas.mpl_connect('motion_notify_event', disp_mouse)
+
+    slider.on_changed(update)
     plt.show()
 
 def sim(policy, apogee):
@@ -98,5 +115,5 @@ def sim(policy, apogee):
 # Plot thrust curve
 if __name__ == "__main__":
     with open("policy.p", "rb") as f:
-        policy = pickle.load(f)
-    plot_policy(policy)
+        policy, costs = pickle.load(f)
+    plot_policy(policy, costs)
