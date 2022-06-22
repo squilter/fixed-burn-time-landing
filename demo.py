@@ -55,7 +55,4 @@ if __name__ == "__main__":
 
     write_policy(policy)
     plot_policy(policy, costs)
-    plot_sim(policy, 25)
-    plot_sim(policy, 18)
-    plot_sim(policy, 14)
-    plot_sim(policy, 35)
+    plot_sim(policy)

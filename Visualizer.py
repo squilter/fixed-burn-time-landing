@@ -6,6 +6,7 @@ from matplotlib.widgets import Slider
 from Dynamics import nearest, nearest_state, dynamics, dynamics_dt, dynamics_dt_no_motor, HEIGHT_MAX, VEL_MAX, DT, TOTAL_BURN_TIME, VEL_MIN, HEIGHT_MIN
 from ValueIteration import weighted_evaluate
 import numpy as np
+import random
 
 SIM_DT = 1/100
 
@@ -37,6 +38,7 @@ def plot_policy(policy, cost):
                 data_cost[i, k, j] = cost[(t, v, h)]
 
     fig = plt.figure(1, figsize=(18,6))
+    fig.canvas.set_window_title('Control Policy')
     action_ax = fig.add_axes([0.05,0.2,0.28,0.7])
     cost_ax = fig.add_axes([0.37,0.2,0.28,0.7])
     sim_ax = fig.add_axes([0.69,0.2,0.28,0.7])
@@ -51,6 +53,9 @@ def plot_policy(policy, cost):
     cost_ax.set_ylabel("Height (m)")
     slider = Slider(slider_ax, 'Burn time remaining (s)', valmin = 0, valmax = max(times), valinit = max(times), valstep=DT)
     colorbar = fig.colorbar(im, ax=action_ax)
+    action_ax.set_title("Throttle %")
+    cost_ax.set_title("Feasibility")
+    sim_ax.set_title("Nominal trajectory to ground")
     colorbar.set_label("Throttle", rotation=270)
 
     def update_time_slider(val):
@@ -62,7 +67,6 @@ def plot_policy(policy, cost):
         plt.draw()
     
     def update_sim(event):
-        # TODO add third subplot that shows path to landing
         height = event.ydata
         vel = event.xdata
         time = slider.val
@@ -78,6 +82,7 @@ def plot_policy(policy, cost):
             sim_ax.set_ylim(0, 20)
             sim_ax.plot(sim_times, heights, sim_times, vels, sim_times, actions)
             sim_ax.legend(labels=['height', 'speed', 'throttle/10'])
+            sim_ax.set_title("Nominal trajectory to ground")
             plt.draw()
     
     fig.canvas.mpl_connect('motion_notify_event', update_sim)
@@ -86,31 +91,42 @@ def plot_policy(policy, cost):
     update_time_slider(max(times))
     plt.show()
 
-# TODO create apogee slider
-def plot_sim(policy, apogee):
+def plot_sim(policy):
     np.seterr('raise')
-    vels = []
-    heights = []
-    actions = []
 
-    state = (TOTAL_BURN_TIME, 0, apogee)
-    t, v, h = state
+    fig = plt.figure(1, figsize=(6,6))
+    fig.canvas.set_window_title("Demo from arbitrary apogee")
+    sim_ax = fig.add_axes([0.1,0.2,0.85,0.7])
+    slider_ax  = fig.add_axes([0.2,0.07,0.3,0.05])
+    slider = Slider(slider_ax, 'Apogee (s)', valmin = 0, valmax = 50, valinit = 18)
 
-    # This ignition policy was chosen by inspecting the policy cost-to-go at the motor ignition point
-    while h*12.5/22 > v:
-        # free fallin'
-        state = dynamics_dt_no_motor(state, SIM_DT)
+    def update_apogee_slider(val):
+        vels = []
+        heights = []
+        actions = []
+        state = (TOTAL_BURN_TIME, 0, val)
         t, v, h = state
-        vels.append(v)
-        heights.append(h)
-        actions.append(0)
 
-    (burn_vels, burn_heights, burn_actions) = sim_burn(policy, v, h)
+        # This ignition policy was chosen by inspecting the policy cost-to-go at the motor ignition point
+        while h*12.5/22 > v:
+            # free fallin'
+            state = dynamics_dt_no_motor(state, SIM_DT)
+            t, v, h = state
+            vels.append(v)
+            heights.append(h)
+            actions.append(0)
+
+        (burn_vels, burn_heights, burn_actions) = sim_burn(policy, v, h)
+        
+        num_steps = len(heights+burn_heights)
+        sim_times = np.linspace(0, num_steps*SIM_DT, num_steps)
+        sim_ax.clear()
+        sim_ax.plot(sim_times, heights+burn_heights, sim_times, vels+burn_vels, sim_times, actions+burn_actions)
+        sim_ax.legend(labels=['height', 'speed', 'throttle/10'])
+        plt.draw()
     
-    num_steps = len(heights+burn_heights)
-    sim_times = np.linspace(0, num_steps*SIM_DT, num_steps)
-    plt.plot(sim_times, heights+burn_heights, sim_times, vels+burn_vels, sim_times, actions+burn_actions)
-    plt.legend(labels=['height', 'speed', 'throttle/10'])
+    slider.on_changed(update_apogee_slider)
+    update_apogee_slider(18)
     plt.show()
 
 def sim_burn(policy, vel, height):
@@ -128,6 +144,7 @@ def sim_burn(policy, vel, height):
     while t >= 0:
         if t <= t_next_action:
             action = weighted_evaluate(policy, time_options, vel_options, height_options, (nearest(time_options, t), v, h))
+            # action += random.random()*6-3 # add actuation error of +-3
             t_next_action = nearest(time_options, t-DT)
         state = dynamics_dt(state, action, SIM_DT)
 
