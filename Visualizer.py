@@ -38,7 +38,7 @@ def plot_policy(policy, cost):
                 data_cost[i, k, j] = cost[(t, v, h)]
 
     fig = plt.figure(1, figsize=(18,6))
-    fig.canvas.set_window_title('Control Policy')
+    fig.canvas.manager.set_window_title('Control Policy')
     action_ax = fig.add_axes([0.05,0.2,0.28,0.7])
     cost_ax = fig.add_axes([0.37,0.2,0.28,0.7])
     sim_ax = fig.add_axes([0.69,0.2,0.28,0.7])
@@ -95,7 +95,7 @@ def plot_sim(policy):
     np.seterr('raise')
 
     fig = plt.figure(1, figsize=(6,6))
-    fig.canvas.set_window_title("Demo from arbitrary apogee")
+    fig.canvas.manager.set_window_title("Demo from arbitrary apogee")
     sim_ax = fig.add_axes([0.1,0.2,0.85,0.7])
     slider_ax  = fig.add_axes([0.2,0.07,0.3,0.05])
     slider = Slider(slider_ax, 'Apogee (s)', valmin = 0, valmax = 50, valinit = 18)
